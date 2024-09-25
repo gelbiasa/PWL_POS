@@ -4,6 +4,7 @@ use App\Http\Controllers\barangcontroller;
 use App\Http\Controllers\kategoriController;
 use App\Http\Controllers\LevelController;
 use App\Http\Controllers\userController;
+use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -17,9 +18,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Route::get('/', function () {
+//     return view('welcome');
+// });
 
 Route::get('/level', [LevelController::class, 'index']);
 Route::get('/kategori',[kategoriController::class, 'index']);
@@ -36,5 +37,7 @@ Route::get('/user/ubah/{id}', [userController::class, 'ubah']);
 Route::put('/user/ubah_simpan/{id}', [userController::class, 'ubah_simpan']);
 
 Route::get('/user/hapus/{id}', [userController::class, 'hapus']);
+
+Route::get('/', [WelcomeController::class, 'index']);
 
 
