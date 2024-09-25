@@ -21,7 +21,7 @@ class userController extends Controller
 
     public function tambah_simpan(Request $request)
     {
-        UserModel::create([
+        UserModel::create(attributes: [
             'username' => $request->username,
             'nama' => $request->nama,
             'password' => Hash::make('$request->password'),
