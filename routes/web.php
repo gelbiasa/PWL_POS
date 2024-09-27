@@ -3,6 +3,7 @@
 use App\Http\Controllers\barangcontroller;
 use App\Http\Controllers\kategoriController;
 use App\Http\Controllers\LevelController;
+use App\Http\Controllers\StokController;
 use App\Http\Controllers\userController;
 use App\Http\Controllers\WelcomeController;
 use App\Http\Controllers\SupplierController;
@@ -95,3 +96,16 @@ Route::group(['prefix' => 'supplier'], function () {
     Route::put('/{id}', [SupplierController::class, 'update']);          // menyimpan perubahan data supplier
     Route::delete('/{id}', [SupplierController::class, 'destroy']);      // menghapus data supplier
 });
+
+Route::group(['prefix' => 'stok'], function () {
+    Route::get('/', [StokController::class, 'index']);              // Menampilkan halaman awal stok
+    Route::post('/list', [StokController::class, 'list']);          // Menampilkan data stok dalam bentuk JSON untuk datatables
+    Route::get('/create', [StokController::class, 'create']);       // Menampilkan halaman form tambah stok
+    Route::post('/', [StokController::class, 'store']);             // Menyimpan data stok baru
+    Route::get('/{id}', [StokController::class, 'show']);           // Menampilkan detail stok
+    Route::get('/{id}/edit', [StokController::class, 'edit']);      // Menampilkan halaman form edit stok
+    Route::put('/{id}', [StokController::class, 'update']);         // Menyimpan perubahan data stok
+    Route::delete('/{id}', [StokController::class, 'destroy']);     // Menghapus data stok
+});
+
+

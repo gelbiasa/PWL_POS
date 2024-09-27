@@ -69,14 +69,14 @@ class barangcontroller extends Controller
             'title'=>'Tambah Barang baru'
         ];
         $kategori = kategorimodel::all();
-        $activeMenu = 'kategori';
+        $activeMenu = 'barang';
         return view('barang.create',['breadcrumb'=>$breadcrumb,'page'=>$page,'activeMenu'=>$activeMenu,'kategori'=>$kategori]);
     }
 
     public function store(Request $request){
         $request->validate([
             'kategori_id'=>'required|integer',
-            'barang_kode'=>'required|string|min:3|unique:m_barang,barang_kode',
+            'barang_kode'=>'required|string|max:3|unique:m_barang,barang_kode',
             'barang_nama'=>'required|string|max:100',
             'harga_jual'=>'required|integer',
             'harga_beli'=>'required|integer',
@@ -141,7 +141,7 @@ class barangcontroller extends Controller
     public function update(Request $request, string $id)
     {
         $request->validate([
-            'barang_kode' => 'required|string|min:3|unique:m_barang,barang_kode,' . $id . ',barang_id', // kode barang harus diisi, berupa string, minimal 3 karakter, dan bernilai unik di tabel m_barang kecuali untuk barang dengan id yang sedang diedit
+            'barang_kode' => 'required|string|max:3|unique:m_barang,barang_kode,' . $id . ',barang_id', // kode barang harus diisi, berupa string, minimal 3 karakter, dan bernilai unik di tabel m_barang kecuali untuk barang dengan id yang sedang diedit
             'barang_nama' => 'required|string|max:100', // nama barang harus diisi, berupa string, dan maksimal 100 karakter
             'harga_beli' => 'required|numeric|min:1', // harga beli harus diisi dan minimal 1
             'harga_jual' => 'required|numeric|min:1', // harga jual harus diisi dan minimal 1
