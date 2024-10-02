@@ -6,6 +6,7 @@ use App\Models\LevelModel;
 use App\Models\UserModel;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\Validator;
 
 class userController extends Controller
 {
@@ -40,7 +41,7 @@ class userController extends Controller
         if ($request->level_id) {
             $users->where('level_id', $request->level_id);
         }
-        
+
         return DataTables::of($users)
             // menambahkan kolom index / no urut (default nama kolom: DT_RowIndex)
             ->addIndexColumn()
@@ -180,5 +181,49 @@ class userController extends Controller
             // tampilkan pesan error
             return redirect('/user')->with('error', 'Data user gagal dihapus karena masih terdapat tabel lain yang terkait dengan data ini');
         }
+    }
+    public function create_ajax()
+    {
+        $level = LevelModel::select('level_id', 'level_nama')->get();
+
+        return view('user.create_ajax')
+            ->with('level', $level);
+    }
+
+    public function store_ajax(Request $request) {
+        // Cek apakah request berupa Ajax
+        if ($request->ajax() || $request->wantsJson()) {
+            // Aturan validasi
+            $rules = [
+                'level_id' => 'required|integer',
+                'username' => 'required|string|min:3|unique:m_user,username',
+                'nama' => 'required|string|max:100',
+                'password' => 'required|min:6'
+            ];
+    
+            // Validasi data inputan
+            $validator = Validator::make($request->all(), $rules);
+    
+            // Jika validasi gagal
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,  // Status respon, false: error/gagal, true: berhasil
+                    'message' => 'Validasi Gagal',
+                    'msgField' => $validator->errors()  // Pesan error validasi
+                ]);
+            }
+    
+            // Simpan data ke database
+            UserModel::create($request->all());
+    
+            // Kembalikan respon JSON jika berhasil
+            return response()->json([
+                'status' => true,
+                'message' => 'Data user berhasil disimpan'
+            ]);
+        }
+    
+        // Jika bukan request Ajax, redirect ke halaman lain (misalnya halaman utama)
+        return redirect('/');
     }
 }
