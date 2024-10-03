@@ -307,4 +307,20 @@ class userController extends Controller
             return redirect('/');
         }
     }
+    public function show_ajax(string $id) {
+        // Cari user berdasarkan id
+        $user = UserModel::find($id);
+    
+        // Periksa apakah user ditemukan
+        if ($user) {
+            // Tampilkan halaman show_ajax dengan data user
+            return view('user.show_ajax', ['user' => $user]);
+        } else {
+            // Tampilkan pesan kesalahan jika user tidak ditemukan
+            return response()->json([
+                'status' => false,
+                'message' => 'Data tidak ditemukan'
+            ]);
+        }
+    }
 }

@@ -18,6 +18,7 @@
             <div class="alert alert-danger">{{ session('error') }}</div>
         @endif
     
+        <div class= "table-responsive">
         <table class="table table-bordered table-striped table-hover table-sm" id="table_level">
             <thead>
                 <tr>
@@ -27,6 +28,7 @@
                 </tr>
             </thead>
         </table>
+      </div>
     </div>
   </div> 
   <div id="myModal" class="modal fade animate shake" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false" 

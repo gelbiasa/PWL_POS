@@ -51,6 +51,7 @@
             </div>
         </div>
 
+        <div class= "table-responsive">
         <table class="table table-bordered table-striped table-hover table-sm" id="table_stok">
             <thead>
                 <tr>
@@ -64,6 +65,7 @@
                 </tr>
             </thead>
         </table>
+        </div>
     </div>
   </div>
 @endsection

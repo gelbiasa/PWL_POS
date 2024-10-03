@@ -80,7 +80,7 @@ class LevelController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'level_kode' => 'required|string|max:3|unique:m_level,level_kode', // username harus diisi, berupa string, maximal 3 karakter, dan bernilai unik di tabel m_level kolom level_kode
+            'level_kode' => 'required|string|max:3|unique:m_level,level_kode', 
             'level_nama' => 'required|string|max:50|unique:m_level,level_nama'
         ]);
 
@@ -226,7 +226,7 @@ class LevelController extends Controller
     {
         if ($request->ajax() || $request->wantsJson()) {
             $rules = [
-                'level_kode' => 'required|string|max:20|unique:m_level,level_kode,' . $id . ',level_id',
+                'level_kode' => 'required|string|max:5|unique:m_level,level_kode,' . $id . ',level_id',
                 'level_nama' => 'required|string|max:100',
             ];
 
@@ -257,5 +257,48 @@ class LevelController extends Controller
         }
 
         return redirect('/');
+    }
+    public function confirm_ajax(string $id)
+    {
+        $level = LevelModel::find($id);
+        return view('level.confirm_ajax', ['level' => $level]);
+    }
+
+    public function delete_ajax(Request $request, $id)
+    {
+        // cek apakah request dari ajax
+        if ($request->ajax() || $request->wantsJson()) {
+            $level = LevelModel::find($id);
+            if ($level) {
+                $level->delete();
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Data berhasil dihapus'
+                ]);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Data tidak ditemukan'
+                ]);
+            }
+        } else {
+            return redirect('/');
+        }
+    }
+    public function show_ajax(string $id) {
+        // Cari level berdasarkan id
+        $level = LevelModel::find($id);
+    
+        // Periksa apakah level ditemukan
+        if ($level) {
+            // Tampilkan halaman show_ajax dengan data level
+            return view('level.show_ajax', ['level' => $level]);
+        } else {
+            // Tampilkan pesan kesalahan jika level tidak ditemukan
+            return response()->json([
+                'status' => false,
+                'message' => 'Data tidak ditemukan'
+            ]);
+        }
     }
 }
