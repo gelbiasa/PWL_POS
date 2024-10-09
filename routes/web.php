@@ -8,6 +8,7 @@ use App\Http\Controllers\userController;
 use App\Http\Controllers\WelcomeController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\AuthController;
+use GuzzleHttp\Middleware;
 use Illuminate\Support\Facades\Route;
 use Monolog\Level;
 
@@ -70,7 +71,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{id}', [UserController :: class, 'destroy']); // menghapus data user
     });
     
-    Route::middleware(['authorize:ADM'])->group(function() {
+    Route::group(['prefix' =>'level', 'middleware' => 'authorize:ADM'],function(){
         Route::get('/', [LevelController::class, 'index']);         // menampilkan halaman awal level
         Route::post('/list', [LevelController::class, 'list']);     // menampilkan data level dalam bentuk json untuk datatables
         Route::get('/create', [LevelController::class, 'create']);  // menampilkan halaman form tambah level
@@ -106,7 +107,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{id}', [KategoriController::class, 'destroy']);
     });
     
-    Route::group(['prefix' => 'barang'], function () {
+    Route::group(['prefix' =>'level', 'middleware' => ['authorize:ADM, MNG']],function(){
         Route::get('/', [barangController::class, 'index']);              // menampilkan halaman awal barang
         Route::post('/list', [barangController::class, 'list']);          // menampilkan data barang dalam bentuk json untuk datatables
         Route::get('/create', [barangController::class, 'create']);       // menampilkan halaman form tambah barang
