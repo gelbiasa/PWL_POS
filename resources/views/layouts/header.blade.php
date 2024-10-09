@@ -10,6 +10,15 @@
       <li class="nav-item d-none d-sm-inline-block">
         <a href="#" class="nav-link">Contact</a>
       </li>
+      <li class="nav-item d-none d-sm-inline-block">
+        <a href="{{ url('logout') }}" class="nav-link">
+          Logout
+        </a>
+      </li>
+        <form id="logout-form" action="{{ url('logout') }}" method="POST" class="d-none">
+          @csrf
+        </form>
+      </li>
     </ul>
 
     <!-- Right navbar links -->
