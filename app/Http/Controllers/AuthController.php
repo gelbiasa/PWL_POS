@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use illuminate\Support\Facades\Auth;
+use App\Models\UserModel;
+use App\Models\LevelModel;
 
 class AuthController extends Controller
 {
@@ -45,5 +47,32 @@ class AuthController extends Controller
         $request->session()->regenerateToken();     
         return redirect('login'); 
     } 
+    public function register()
+    {
+        $level = LevelModel::all(); // Fetch level from database
+        return view('auth.register', compact('level')); // Pass levels to the view
+    }
 
+    public function postRegister(Request $request)
+    {
+        $request->validate([
+            'username' => 'required|min:4|max:20',
+            'nama' => 'required|min:2|max:50',
+            'password' => 'required|min:6|max:20',
+            'level_id' => 'required' // Validate level_id
+        ]);
+
+        UserModel::create([
+            'username' => $request->username,
+            'nama' => $request->nama,
+            'password' => bcrypt($request->password),
+            'level_id' => $request->level_id, // Save the selected level
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Register Berhasil',
+            'redirect' => url('login')
+        ]);
+    }
 }

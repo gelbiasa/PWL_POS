@@ -53,6 +53,11 @@
             <small id="error-password" class="error-text text-danger"></small>
           </div>
           
+          <!-- Register link -->
+          <div class="text-center mb-3">
+            <a href="{{ url('register') }}">Tidak Punya Akun? Register</a>
+          </div>
+
           <div class="row">
             <div class="col-8">
               <div class="icheck-primary">
