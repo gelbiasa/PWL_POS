@@ -132,7 +132,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/{id}/delete_ajax', [barangController::class, 'confirm_ajax']); 
         Route::delete('/{id}/delete_ajax', [barangController::class, 'delete_ajax']); 
         Route::get('/import', [barangController::class, 'import']);     
-        Route::post('/import_ajax', [barangController::class, 'import_ajax']);     
+        Route::post('/import_ajax', [barangController::class, 'import_ajax']); 
+        Route::get('/export_excel', [barangController::class, 'export_excel']);     
     });
     
     Route::group(['prefix' =>'supplier', 'middleware' => ['authorize:ADM,MNG,STF']],function(){
