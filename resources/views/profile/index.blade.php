@@ -14,7 +14,7 @@
                         @csrf
                         <div class="text-center">
                             <!-- Jika pengguna belum memiliki foto profil, tampilkan icon default -->
-                            <img id="profile-pic" src="{{ Auth::user()->foto_profil ? asset('storage/' . Auth::user()->foto_profil) : asset('storage/gambar/user.png') }}" class="rounded-circle" width="200" alt="Profile Picture">
+                            <img id="profile-pic" src="{{ Auth::user()->foto_profil ? asset('storage/' . Auth::user()->foto_profil) : asset('user.png') }}" class="rounded-circle" width="200" alt="Profile Picture">
                             <div class="mt-2">
                                 <label for="foto_profil" class="btn btn-sm btn-primary">
                                     <i class="fas fa-edit"></i> Ganti Foto
