@@ -8,6 +8,7 @@ use App\Http\Controllers\userController;
 use App\Http\Controllers\WelcomeController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProfileController;
 use GuzzleHttp\Middleware;
 use Illuminate\Support\Facades\Route;
 use Monolog\Level;
@@ -175,4 +176,10 @@ Route::middleware('auth')->group(function () {
         Route::put('/{id}', [StokController::class, 'update']);         // Menyimpan perubahan data stok
         Route::delete('/{id}', [StokController::class, 'destroy']);     // Menghapus data stok
     });
+
+    Route::group(['prefix' =>'profile', 'middleware' => ['authorize:ADM,MNG,STF,CUS']],function(){
+        Route::get('/', [ProfileController::class, 'index']);
+        Route::post('/update_profile', [ProfileController::class, 'update_profile']);
+    });
+    
 });
