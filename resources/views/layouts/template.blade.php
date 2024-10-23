@@ -32,10 +32,15 @@
   <!-- Main Sidebar Container -->
   <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo -->
-    <a href="{{ url('/')}}" class="brand-link">
-      <img src="{{ asset('adminlte/dist/img/AdminLTELogo.png') }}" alt="AdminLTE Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
-      <span class="brand-text font-weight-light">PWL - Starter Code</span>
+    <a href="{{ url('/profile') }}" class="brand-link">
+      <img src="{{ Auth::user()->foto_profil ? asset('storage/' . Auth::user()->foto_profil) : asset('user.png') }}" 
+           alt="User Profile Picture" 
+           class="brand-image img-circle elevation-3" 
+           style="width: 32px; height: 40px; object-fit: cover; opacity: .8;">
+      <span class="brand-text font-weight-light">{{ Auth::user()->nama }}</span>
     </a>
+  
+  
 
     <!-- Sidebar -->
     @include("layouts.sidebar")
