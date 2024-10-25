@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use Barryvdh\DomPDF\Facade\Pdf; 
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 
 class SupplierController extends Controller
 {
@@ -259,23 +260,44 @@ class SupplierController extends Controller
     public function delete_ajax(Request $request, $id)
     {
         $supplier = SupplierModel::find($id);
-        if ($supplier) {
-            $supplier->delete();
-            return response()->json([
-                'status' => true,
-                'message' => 'Data berhasil dihapus'
-            ]);
-        } else {
+
+        if (!$supplier) {
             return response()->json([
                 'status' => false,
                 'message' => 'Data tidak ditemukan'
             ]);
         }
+
+        // Check if the supplier is referenced in t_stok
+        $isReferencedInStok = DB::table('t_stok')->where('supplier_id', $id)->exists();
+
+        if ($isReferencedInStok) {
+            // Return error if the supplier is referenced in t_stok
+            return response()->json([
+                'status' => false,
+                'message' => 'Supplier tidak dapat dihapus karena masih digunakan di tabel stok'
+            ]);
+        }
+
+        // Proceed with the deletion if not referenced
+        if ($supplier->delete()) {
+            return response()->json([
+                'status' => true,
+                'message' => 'Data supplier berhasil dihapus'
+            ]);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Terjadi kesalahan saat menghapus data supplier'
+            ]);
+        }
     }
-    public function show_ajax(string $id) {
+
+    public function show_ajax(string $id)
+    {
         // Cari supplier berdasarkan id
         $supplier = SupplierModel::find($id);
-    
+
         // Periksa apakah supplier ditemukan
         if ($supplier) {
             // Tampilkan halaman show_ajax dengan data supplier
@@ -288,67 +310,67 @@ class SupplierController extends Controller
             ]);
         }
     }
-    public function import() 
-    { 
-        return view('supplier.import'); 
-    } 
-    
-    public function import_ajax(Request $request) 
-    { 
-        if($request->ajax() || $request->wantsJson()){ 
-            $rules = [ 
+    public function import()
+    {
+        return view('supplier.import');
+    }
+
+    public function import_ajax(Request $request)
+    {
+        if ($request->ajax() || $request->wantsJson()) {
+            $rules = [
                 // validasi file harus xls atau xlsx, max 1MB 
-                'file_supplier' => ['required', 'mimes:xlsx', 'max:1024'] 
-            ]; 
- 
-            $validator = Validator::make($request->all(), $rules); 
-            if($validator->fails()){ 
-                return response()->json([ 
-                    'status' => false, 
-                    'message' => 'Validasi Gagal', 
-                    'msgField' => $validator->errors() 
-                ]); 
-            } 
- 
+                'file_supplier' => ['required', 'mimes:xlsx', 'max:1024']
+            ];
+
+            $validator = Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Validasi Gagal',
+                    'msgField' => $validator->errors()
+                ]);
+            }
+
             $file = $request->file('file_supplier');  // ambil file dari request 
- 
+
             $reader = IOFactory::createReader('Xlsx');  // load reader file excel 
             $reader->setReadDataOnly(true);             // hanya membaca data 
             $spreadsheet = $reader->load($file->getRealPath()); // load file excel 
             $sheet = $spreadsheet->getActiveSheet();    // ambil sheet yang aktif 
- 
+
             $data = $sheet->toArray(null, false, true, true);   // ambil data excel 
- 
-            $insert = []; 
-            if(count($data) > 1){ // jika data lebih dari 1 baris 
-                foreach ($data as $baris => $value) { 
-                    if($baris > 1){ // baris ke 1 adalah header, maka lewati 
-                        $insert[] = [ 
-                            'supplier_kode' => $value['A'], 
-                            'supplier_nama' => $value['B'], 
-                            'supplier_alamat' => $value['C'], 
-                        ]; 
-                    } 
-                } 
- 
-                if(count($insert) > 0){ 
+
+            $insert = [];
+            if (count($data) > 1) { // jika data lebih dari 1 baris 
+                foreach ($data as $baris => $value) {
+                    if ($baris > 1) { // baris ke 1 adalah header, maka lewati 
+                        $insert[] = [
+                            'supplier_kode' => $value['A'],
+                            'supplier_nama' => $value['B'],
+                            'supplier_alamat' => $value['C'],
+                        ];
+                    }
+                }
+
+                if (count($insert) > 0) {
                     // insert data ke database, jika data sudah ada, maka diabaikan 
-                    SupplierModel::insertOrIgnore($insert);    
-                } 
- 
-                return response()->json([ 
-                    'status' => true, 
-                    'message' => 'Data berhasil diimport' 
-                ]); 
-            }else{ 
-                return response()->json([ 
-                    'status' => false, 
-                    'message' => 'Tidak ada data yang diimport' 
-                ]); 
-            } 
-        } 
-        return redirect('/'); 
-    } 
+                    SupplierModel::insertOrIgnore($insert);
+                }
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Data berhasil diimport'
+                ]);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Tidak ada data yang diimport'
+                ]);
+            }
+        }
+        return redirect('/');
+    }
     public function export_excel()
     {
         // ambil data supplier yang akan di export
@@ -380,7 +402,7 @@ class SupplierController extends Controller
         foreach (range('A', 'D') as $columnID) {
             $sheet->getColumnDimension($columnID)->setAutoSize(true); // set auto size untuk kolom
         }
-        
+
         $sheet->setTitle('Data Supplier'); // set title sheet
 
         $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');

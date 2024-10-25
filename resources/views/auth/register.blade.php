@@ -72,12 +72,24 @@
           <div class="input-group mb-3">
             <input type="password" id="password" name="password" class="form-control" placeholder="Password" required>
             <div class="input-group-append">
-              <div class="input-group-text">
-                <span class="fas fa-lock"></span>
-              </div>
+                <div class="input-group-text">
+                    <span class="fas fa-lock"></span>
+                </div>
             </div>
-            <small id="error-password" class="error-text text-danger"></small>
+        </div>
+        <small id="error-password" class="error-text text-danger"></small>
+        
+          <!-- Verifikasi Password -->
+          <div class="input-group mb-3">
+            <input type="password" id="password_confirmation" name="password_confirmation" class="form-control" placeholder="Verifikasi Password" required>
+            <div class="input-group-append">
+                <div class="input-group-text">
+                    <span class="fas fa-lock"></span>
+                </div>
+            </div>
           </div>
+          <small id="error-password_confirmation" class="error-text text-danger"></small>
+        
 
           <div class="text-center mb-3">
             <a href="{{ url('login') }}">Sudah Punya Akun?</a>
@@ -107,32 +119,61 @@
 
   <script>
     $(document).ready(function() {
-      $("#form-register").on('submit', function(e) {
+    $("#form-register").on('submit', function(e) {
         e.preventDefault();
-        $.ajax({
-          url: $(this).attr('action'),
-          type: 'POST',
-          data: $(this).serialize(),
-          success: function(response) {
-            if (response.status) {
-              Swal.fire({
-                icon: 'success',
-                title: 'Register Berhasil',
-                text: response.message
-              }).then(function() {
-                window.location = response.redirect;
-              });
-            } else {
-              Swal.fire({
-                icon: 'error',
-                title: 'Terjadi Kesalahan',
-                text: response.message
-              });
-            }
-          }
-        });
-      });
+
+        let password = $('#password').val();
+        let confirmPassword = $('#password_confirmation').val();
+
+        if (password.length < 5) {
+            $('#error-password').text('Password minimal harus 5 karakter');
+        } else {
+            $('#error-password').text('');
+        }
+
+        if (password !== confirmPassword) {
+            $('#error-password_confirmation').text('Verifikasi password yang anda masukkan tidak sesuai dengan password baru');
+        } else {
+            $('#error-password_confirmation').text('');
+        }
+
+        if (password.length >= 5 && password === confirmPassword) {
+            // Proceed with form submission via AJAX
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    if (response.status) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Register Berhasil',
+                            text: response.message
+                        }).then(function() {
+                            window.location = response.redirect;
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Terjadi Kesalahan',
+                            text: response.message
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Terjadi Kesalahan',
+                        text: 'Registrasi gagal. Silakan coba lagi.'
+                    });
+                }
+            });
+        } else {
+            e.preventDefault();
+        }
     });
-  </script>
+});
+
+</script>
 </body>
 </html>

@@ -202,161 +202,198 @@ class PenjualanController extends Controller
     }
 
     public function import_ajax(Request $request)
-{
-    if ($request->ajax() || $request->wantsJson()) {
-        // Validasi file
-        $rules = [
-            'file_penjualan' => ['required', 'mimes:xlsx', 'max:1024']
-        ];
+    {
+        if ($request->ajax() || $request->wantsJson()) {
+            // Validasi file
+            $rules = [
+                'file_penjualan' => ['required', 'mimes:xlsx', 'max:1024']
+            ];
 
-        $validator = Validator::make($request->all(), $rules);
+            $validator = Validator::make($request->all(), $rules);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Validasi gagal',
-                'msgField' => $validator->errors()
-            ]);
-        }
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Validasi gagal',
+                    'msgField' => $validator->errors()
+                ]);
+            }
 
-        // Mengambil file dari request
-        $file = $request->file('file_penjualan');
-        $reader = IOFactory::createReader('Xlsx');
-        $reader->setReadDataOnly(true);
-        $spreadsheet = $reader->load($file->getRealPath());
-        $sheet = $spreadsheet->getActiveSheet();
+            // Mengambil file dari request
+            $file = $request->file('file_penjualan');
+            $reader = IOFactory::createReader('Xlsx');
+            $reader->setReadDataOnly(true);
+            $spreadsheet = $reader->load($file->getRealPath());
+            $sheet = $spreadsheet->getActiveSheet();
 
-        // Mengubah data sheet menjadi array
-        $data = $sheet->toArray(null, false, true, true);
+            // Mengubah data sheet menjadi array
+            $data = $sheet->toArray(null, false, true, true);
 
-        $insertPenjualan = [];
-        $insertPenjualanDetail = [];
-        $penjualanKodeMap = [];
+            $insertPenjualan = [];
+            $insertPenjualanDetail = [];
+            $penjualanKodeMap = [];
 
-        if (count($data) > 1) {
-            foreach ($data as $baris => $value) {
-                if ($baris > 1) {
-                    // Cek apakah penjualan_kode sudah ada di array penjualan yang akan dimasukkan
-                    if (!isset($penjualanKodeMap[$value['C']])) {
-                        // Jika belum ada, tambahkan ke dalam array dan siapkan untuk insert ke t_penjualan
-                        $penjualan_tanggal = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value['D'])->format('Y-m-d H:i:s');
+            // Variable untuk menyimpan nilai sebelumnya
+            $lastUserId = null;
+            $lastPembeli = null;
+            $lastPenjualanKode = null;
+            $lastPenjualanTanggal = null;
 
-                        // Masukkan data ke t_penjualan
-                        $penjualan = PenjualanModel::create([
-                            'user_id' => $value['A'],
-                            'pembeli' => $value['B'],
-                            'penjualan_kode' => $value['C'],
-                            'penjualan_tanggal' => $penjualan_tanggal,
-                        ]);
+            if (count($data) > 1) {
+                foreach ($data as $baris => $value) {
+                    if ($baris > 1) {
+                        // Jika kolom user_id kosong, gunakan nilai sebelumnya
+                        $userId = $value['A'] ?? $lastUserId;
+                        $pembeli = $value['B'] ?? $lastPembeli;
+                        $penjualanKode = $value['C'] ?? $lastPenjualanKode;
+                        $penjualanTanggal = !empty($value['D']) ?
+                            \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value['D'])->format('Y-m-d H:i:s') :
+                            $lastPenjualanTanggal;
 
-                        // Simpan penjualan_id yang di-generate oleh database
-                        $penjualanKodeMap[$value['C']] = $penjualan->penjualan_id;
+                        // Update nilai sebelumnya jika kolom tidak kosong
+                        if (!empty($value['A'])) $lastUserId = $value['A'];
+                        if (!empty($value['B'])) $lastPembeli = $value['B'];
+                        if (!empty($value['C'])) $lastPenjualanKode = $value['C'];
+                        if (!empty($value['D'])) $lastPenjualanTanggal = $penjualanTanggal;
+
+                        // Cek apakah penjualan_kode sudah ada di array penjualan yang akan dimasukkan
+                        if (!isset($penjualanKodeMap[$penjualanKode])) {
+                            // Masukkan data ke t_penjualan
+                            $penjualan = PenjualanModel::create([
+                                'user_id' => $userId,
+                                'pembeli' => $pembeli,
+                                'penjualan_kode' => $penjualanKode,
+                                'penjualan_tanggal' => $penjualanTanggal,
+                            ]);
+
+                            // Simpan penjualan_id yang di-generate oleh database
+                            $penjualanKodeMap[$penjualanKode] = $penjualan->penjualan_id;
+                        }
+
+                        // Masukkan data ke t_penjualan_detail dengan menghubungkan penjualan_id
+                        $insertPenjualanDetail[] = [
+                            'penjualan_id' => $penjualanKodeMap[$penjualanKode],
+                            'barang_id' => $value['E'],
+                            'harga' => $value['H'], // Gunakan kolom harga total dari Excel
+                            'jumlah' => $value['G'],
+                            'created_at' => now(),
+                        ];
                     }
-
-                    // Masukkan data ke t_penjualan_detail dengan menghubungkan penjualan_id
-                    $insertPenjualanDetail[] = [
-                        'penjualan_id' => $penjualanKodeMap[$value['C']],
-                        'barang_id' => $value['E'],
-                        'harga' => $value['H'], // Gunakan kolom harga total dari Excel
-                        'jumlah' => $value['G'],
-                        'created_at' => now(),
-                    ];
                 }
-            }
 
-            // Insert ke t_penjualan_detail secara batch
-            if (count($insertPenjualanDetail) > 0) {
-                PenjualanDetailModel::insert($insertPenjualanDetail);
-            }
+                // Insert ke t_penjualan_detail secara batch
+                if (count($insertPenjualanDetail) > 0) {
+                    PenjualanDetailModel::insert($insertPenjualanDetail);
+                }
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Data penjualan berhasil diimport'
-            ]);
-        } else {
-            return response()->json([
-                'status' => false,
-                'message' => 'Tidak ada data yang diimport'
-            ]);
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Data penjualan berhasil diimport'
+                ]);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Tidak ada data yang diimport'
+                ]);
+            }
         }
+        return redirect('/');
     }
-    return redirect('/');
+
+
+    public function export_excel()
+{
+    // Ambil data penjualan yang akan diexport
+    $penjualan = PenjualanModel::select('penjualan_id', 'user_id', 'pembeli', 'penjualan_kode', 'penjualan_tanggal')
+        ->with(['user', 'penjualanDetail.barang']) // Gunakan relasi 'penjualanDetail' sesuai model
+        ->orderBy('penjualan_tanggal')
+        ->get();
+
+    // Load library excel
+    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet(); // Ambil sheet yang aktif
+
+    // Set header untuk penjualan
+    $sheet->setCellValue('A1', 'No');
+    $sheet->setCellValue('B1', 'Tanggal Penjualan');
+    $sheet->setCellValue('C1', 'Nama User');
+    $sheet->setCellValue('D1', 'Nama Pembeli');
+    $sheet->setCellValue('E1', 'Kode Penjualan');
+    $sheet->setCellValue('F1', 'Nama Barang');
+    $sheet->setCellValue('G1', 'Harga Satuan');
+    $sheet->setCellValue('H1', 'Jumlah');
+    $sheet->setCellValue('I1', 'Harga');
+
+    $sheet->getStyle('A1:I1')->getFont()->setBold(true); // Bold header
+
+    $no = 1;  // Nomor data dimulai dari 1
+    $baris = 2; // Baris data dimulai dari baris ke 2
+
+    // Loop untuk setiap penjualan
+    foreach ($penjualan as $penj) {
+        $startRow = $baris; // Menyimpan baris awal untuk merge
+
+        // Loop untuk setiap detail penjualan
+        foreach ($penj->penjualanDetail as $detail) {
+            $sheet->setCellValue('F' . $baris, $detail->barang->barang_nama); // Nama barang
+            $sheet->setCellValue('G' . $baris, $detail->barang->harga_jual); // Harga Satuan
+            $sheet->setCellValue('H' . $baris, $detail->jumlah); // Jumlah barang
+            $sheet->setCellValue('I' . $baris, $detail->harga); // Harga total per barang
+
+            $baris++;
+        }
+
+        // Merge cell untuk kolom A hingga E jika ada lebih dari satu barang
+        if ($baris - 1 > $startRow) {
+            // Merge cells
+            $sheet->mergeCells('A' . $startRow . ':A' . ($baris - 1)); // Nomor
+            $sheet->mergeCells('B' . $startRow . ':B' . ($baris - 1)); // Tanggal Penjualan
+            $sheet->mergeCells('C' . $startRow . ':C' . ($baris - 1)); // User ID
+            $sheet->mergeCells('D' . $startRow . ':D' . ($baris - 1)); // Nama Pembeli
+            $sheet->mergeCells('E' . $startRow . ':E' . ($baris - 1)); // Kode Penjualan
+
+            // Set alignment tengah dan tengah untuk cell yang dimerge
+            $sheet->getStyle('A' . $startRow . ':E' . ($baris - 1))
+                ->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
+                ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        }
+
+        // Mengisi data penjualan di baris pertama dari hasil merge
+        $sheet->setCellValue('A' . $startRow, $no); // Nomor
+        $sheet->setCellValue('B' . $startRow, $penj->penjualan_tanggal); // Tanggal penjualan
+        $sheet->setCellValue('C' . $startRow, $penj->user->nama); // Nama user
+        $sheet->setCellValue('D' . $startRow, $penj->pembeli); // Nama pembeli
+        $sheet->setCellValue('E' . $startRow, $penj->penjualan_kode); // Kode penjualan
+
+        $no++;
+    }
+
+    // Set auto size untuk kolom
+    foreach (range('A', 'I') as $columnID) {
+        $sheet->getColumnDimension($columnID)->setAutoSize(true);
+    }
+
+    // Set title sheet
+    $sheet->setTitle('Data Penjualan');
+
+    $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
+    $filename = 'Data Penjualan ' . date('Y-m-d H:i:s') . '.xlsx';
+
+    // Pengaturan header untuk download file excel
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Cache-Control: max-age=0');
+    header('Cache-Control: max-age=1');
+    header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+    header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+    header('Cache-Control: cache, must-revalidate');
+    header('Pragma: public');
+
+    $writer->save('php://output');
+    exit;
 }
 
-    // Function untuk export data penjualan ke Excel
-    public function export_excel()
-    {
-        // Ambil data penjualan yang akan diexport
-        $penjualan = PenjualanModel::select('penjualan_id', 'user_id', 'pembeli', 'penjualan_kode', 'penjualan_tanggal')
-            ->with(['user', 'penjualanDetail.barang']) // Gunakan relasi 'penjualanDetail' sesuai model
-            ->orderBy('penjualan_tanggal')
-            ->get();
 
-        // Load library excel
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet(); // Ambil sheet yang aktif
-
-        // Set header untuk penjualan
-        $sheet->setCellValue('A1', 'No');
-        $sheet->setCellValue('B1', 'Tanggal Penjualan');
-        $sheet->setCellValue('C1', 'User ID');
-        $sheet->setCellValue('D1', 'Nama Pembeli');
-        $sheet->setCellValue('E1', 'Kode Penjualan');
-        $sheet->setCellValue('F1', 'Barang ID');
-        $sheet->setCellValue('G1', 'Nama Barang');
-        $sheet->setCellValue('H1', 'Harga Satuan');
-        $sheet->setCellValue('I1', 'Jumlah');
-        $sheet->setCellValue('J1', 'Harga');
-
-        $sheet->getStyle('A1:J1')->getFont()->setBold(true); // Bold header
-
-        $no = 1;  // Nomor data dimulai dari 1
-        $baris = 2; // Baris data dimulai dari baris ke 2
-
-        // Loop untuk setiap penjualan
-        foreach ($penjualan as $penj) {
-            // Loop untuk setiap detail penjualan
-            foreach ($penj->penjualanDetail as $detail) {
-                $sheet->setCellValue('A' . $baris, $no);
-                $sheet->setCellValue('B' . $baris, $penj->penjualan_tanggal); // Tanggal penjualan
-                $sheet->setCellValue('C' . $baris, $penj->user->nama); // Nama user
-                $sheet->setCellValue('D' . $baris, $penj->pembeli); // Nama pembeli
-                $sheet->setCellValue('E' . $baris, $penj->penjualan_kode); // Kode penjualan
-                $sheet->setCellValue('F' . $baris, $detail->barang_id); // Barang ID
-                $sheet->setCellValue('G' . $baris, $detail->barang->barang_nama); // Nama barang
-                $sheet->setCellValue('H' . $baris, $detail->barang->harga_jual); // Nama baran
-                $sheet->setCellValue('I' . $baris, $detail->jumlah); // Jumlah barang
-                $sheet->setCellValue('J' . $baris, $detail->harga); // Harga per barang
-
-                $baris++;
-                $no++;
-            }
-        }
-
-        // Set auto size untuk kolom
-        foreach (range('A', 'J') as $columnID) {
-            $sheet->getColumnDimension($columnID)->setAutoSize(true);
-        }
-
-        // Set title sheet
-        $sheet->setTitle('Data Penjualan');
-
-        $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
-        $filename = 'Data Penjualan ' . date('Y-m-d H:i:s') . '.xlsx';
-
-        // Pengaturan header untuk download file excel
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Cache-Control: max-age=0');
-        header('Cache-Control: max-age=1');
-        header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
-        header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
-        header('Cache-Control: cache, must-revalidate');
-        header('Pragma: public');
-
-        $writer->save('php://output');
-        exit;
-    }
     public function export_pdf()
     {
         // Ambil data penjualan yang akan diexport

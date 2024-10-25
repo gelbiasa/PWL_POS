@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 
 class userController extends Controller
 {
@@ -294,8 +295,28 @@ class userController extends Controller
         // cek apakah request dari ajax
         if ($request->ajax() || $request->wantsJson()) {
             $user = UserModel::find($id);
-            if ($user) {
-                $user->delete();
+            
+            if (!$user) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Data tidak ditemukan'
+                ]);
+            }
+    
+            // Check if the user is referenced in other tables
+            $isReferencedInPenjualan = DB::table('t_penjualan')->where('user_id', $id)->exists();
+            $isReferencedInStok = DB::table('t_stok')->where('user_id', $id)->exists();
+    
+            if ($isReferencedInPenjualan || $isReferencedInStok) {
+                // Return error if the user is referenced
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Pengguna tidak dapat dihapus karena masih digunakan di tabel lain'
+                ]);
+            }
+    
+            // Proceed with the deletion if not referenced
+            if ($user->delete()) {
                 return response()->json([
                     'status' => true,
                     'message' => 'Data berhasil dihapus'
@@ -303,13 +324,14 @@ class userController extends Controller
             } else {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Data tidak ditemukan'
+                    'message' => 'Terjadi kesalahan saat menghapus data'
                 ]);
             }
         } else {
             return redirect('/');
         }
     }
+    
     public function show_ajax(string $id) {
         // Cari user berdasarkan id
         $user = UserModel::find($id);

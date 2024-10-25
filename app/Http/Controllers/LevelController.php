@@ -8,6 +8,7 @@ use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Barryvdh\DomPDF\Facade\Pdf; 
+use Illuminate\Support\Facades\DB;
 
 class LevelController extends Controller
 {
@@ -267,26 +268,46 @@ class LevelController extends Controller
     }
 
     public function delete_ajax(Request $request, $id)
-    {
-        // cek apakah request dari ajax
-        if ($request->ajax() || $request->wantsJson()) {
-            $level = LevelModel::find($id);
-            if ($level) {
-                $level->delete();
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Data berhasil dihapus'
-                ]);
-            } else {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Data tidak ditemukan'
-                ]);
-            }
-        } else {
-            return redirect('/');
+{
+    // Cek apakah request dari Ajax
+    if ($request->ajax() || $request->wantsJson()) {
+        $level = LevelModel::find($id);
+
+        if (!$level) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Data level tidak ditemukan'
+            ]);
         }
+
+        // Check if the level is referenced in m_user
+        $isReferencedInUser = DB::table('m_user')->where('level_id', $id)->exists();
+
+        if ($isReferencedInUser) {
+            // Return error if the level is referenced
+            return response()->json([
+                'status' => false,
+                'message' => 'Level tidak dapat dihapus karena masih digunakan oleh pengguna'
+            ]);
+        }
+
+        // Proceed with the deletion if not referenced
+        if ($level->delete()) {
+            return response()->json([
+                'status' => true,
+                'message' => 'Data level berhasil dihapus'
+            ]);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Terjadi kesalahan saat menghapus data level'
+            ]);
+        }
+    } else {
+        return redirect('/');
     }
+}
+
     public function show_ajax(string $id) {
         // Cari level berdasarkan id
         $level = LevelModel::find($id);

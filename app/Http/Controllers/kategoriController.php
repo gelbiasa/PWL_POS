@@ -8,6 +8,7 @@ use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Barryvdh\DomPDF\Facade\Pdf; 
+use Illuminate\Support\Facades\DB;
 
 class kategoriController extends Controller
 {
@@ -247,21 +248,41 @@ class kategoriController extends Controller
         return view('kategori.confirm_ajax', ['kategori' => $kategori]);
     }
     public function delete_ajax(Request $request, $id)
-    {
-        $kategori = KategoriModel::find($id);
-        if ($kategori) {
-            $kategori->delete();
-            return response()->json([
-                'status' => true,
-                'message' => 'Data berhasil dihapus'
-            ]);
-        } else {
-            return response()->json([
-                'status' => false,
-                'message' => 'Data tidak ditemukan'
-            ]);
-        }
+{
+    $kategori = KategoriModel::find($id);
+
+    if (!$kategori) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Data kategori tidak ditemukan'
+        ]);
     }
+
+    // Check if the kategori is referenced in m_barang
+    $isReferencedInBarang = DB::table('m_barang')->where('kategori_id', $id)->exists();
+
+    if ($isReferencedInBarang) {
+        // Return error if the kategori is referenced in m_barang
+        return response()->json([
+            'status' => false,
+            'message' => 'Kategori tidak dapat dihapus karena masih digunakan di tabel barang'
+        ]);
+    }
+
+    // Proceed with the deletion if not referenced
+    if ($kategori->delete()) {
+        return response()->json([
+            'status' => true,
+            'message' => 'Data kategori berhasil dihapus'
+        ]);
+    } else {
+        return response()->json([
+            'status' => false,
+            'message' => 'Terjadi kesalahan saat menghapus data kategori'
+        ]);
+    }
+}
+
     public function show_ajax(string $id) {
         // Cari kategori berdasarkan id
         $kategori = KategoriModel::find($id);

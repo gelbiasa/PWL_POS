@@ -94,23 +94,36 @@
                 <th>Harga Satuan</th>
                 <th>Jumlah</th>
                 <th>Harga</th>
+                <th>Total Harga</th>
             </tr>
         </thead>
         <tbody>
             @foreach($penjualan as $index => $p)
+                @php
+                    $totalHargaPenjualan = 0;
+                @endphp
                 @foreach($p->penjualanDetail as $detailIndex => $detail)
                 <tr>
                     @if ($detailIndex === 0)
-                        <td class="text-center" rowspan="{{ count($p->penjualanDetail) }}">{{ $index + 1 }}</td>
-                        <td rowspan="{{ count($p->penjualanDetail) }}">{{ $p->penjualan_kode }}</td>
-                        <td rowspan="{{ count($p->penjualanDetail) }}">{{ \Carbon\Carbon::parse($p->penjualan_tanggal)->format('Y-m-d H:i:s') }}</td>
-                        <td rowspan="{{ count($p->penjualanDetail) }}">{{ $p->user->nama }}</td>
-                        <td rowspan="{{ count($p->penjualanDetail) }}">{{ $p->pembeli }}</td>
+                        @php
+                            foreach ($p->penjualanDetail as $d) {
+                                $totalHargaPenjualan += $d->harga;
+                            }
+                        @endphp
+                        <td class="text-center font-10" rowspan="{{ count($p->penjualanDetail) }}">{{ $index + 1 }}</td>
+                        <td class="font-10" rowspan="{{ count($p->penjualanDetail) }}">{{ $p->penjualan_kode }}</td>
+                        <td class="font-10" rowspan="{{ count($p->penjualanDetail) }}">{{ \Carbon\Carbon::parse($p->penjualan_tanggal)->format('Y-m-d H:i:s') }}</td>
+                        <td class="font-10" rowspan="{{ count($p->penjualanDetail) }}">{{ $p->user->nama }}</td>
+                        <td class="font-10" rowspan="{{ count($p->penjualanDetail) }}">{{ $p->pembeli }}</td>
                     @endif
-                    <td>{{ $detail->barang->barang_nama }}</td>
-                    <td>{{ $detail->barang->harga_jual }}</td>
-                    <td>{{ $detail->jumlah }}</td>
-                    <td>{{ $detail->harga }}</td>
+                    <td class="font-10">{{ $detail->barang->barang_nama }}</td>
+                    <td class="font-10">Rp {{ number_format($detail->barang->harga_jual, 0, ',', '.') }}</td>
+                    <td class="font-10">{{ $detail->jumlah }}</td>
+                    <td class="font-10">Rp {{ number_format($detail->harga, 0, ',', '.') }}</td>
+
+                    @if ($detailIndex === 0)
+                        <td class="font-10" rowspan="{{ count($p->penjualanDetail) }}">Rp {{ number_format($totalHargaPenjualan, 0, ',', '.') }}</td>
+                    @endif
                 </tr>
                 @endforeach
             @endforeach

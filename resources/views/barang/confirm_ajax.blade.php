@@ -33,8 +33,8 @@
                     <tr><th class="text-right col-3">Kategori Barang :</th><td class="col-9">{{ $barang->kategori->kategori_nama }}</td></tr>
                     <tr><th class="text-right col-3">Kode Barang :</th><td class="col-9">{{ $barang->barang_kode }}</td></tr>
                     <tr><th class="text-right col-3">Nama Barang :</th><td class="col-9">{{ $barang->barang_nama }}</td></tr>
-                    <tr><th class="text-right col-3">Harga Beli :</th><td class="col-9">{{ $barang->harga_beli }}</td></tr>
-                    <tr><th class="text-right col-3">Harga Jual :</th><td class="col-9">{{ $barang->harga_jual }}</td></tr>
+                    <tr><th class="text-right col-3">Harga Beli :</th><td class="col-9">{{ 'Rp ' . number_format($barang->harga_beli, 0, ',', '.') }}</td></tr>
+                    <tr><th class="text-right col-3">Harga Jual :</th><td class="col-9">{{ 'Rp ' . number_format($barang->harga_jual, 0, ',', '.') }}</td></tr>
                 </table>
             </div>
             <div class="modal-footer">

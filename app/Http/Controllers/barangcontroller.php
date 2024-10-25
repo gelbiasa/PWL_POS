@@ -9,6 +9,7 @@ use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Barryvdh\DomPDF\Facade\Pdf; 
+use Illuminate\Support\Facades\DB;
 
 class barangcontroller extends Controller
 {
@@ -302,26 +303,47 @@ class barangcontroller extends Controller
 
     // Menghapus data barang menggunakan Ajax
     public function delete_ajax(Request $request, $id)
-    {
-        // Cek apakah request dari Ajax
-        if ($request->ajax() || $request->wantsJson()) {
-            $barang = BarangModel::find($id);
-            if ($barang) {
-                $barang->delete();
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Data barang berhasil dihapus'
-                ]);
-            } else {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Data barang tidak ditemukan'
-                ]);
-            }
-        } else {
-            return redirect('/');
+{
+    // Cek apakah request dari Ajax
+    if ($request->ajax() || $request->wantsJson()) {
+        $barang = BarangModel::find($id);
+
+        if (!$barang) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Data barang tidak ditemukan'
+            ]);
         }
+
+        // Check if the item is referenced in other tables
+        $isReferencedInStok = DB::table('t_stok')->where('barang_id', $id)->exists();
+        $isReferencedInPenjualanDetail = DB::table('t_penjualan_detail')->where('barang_id', $id)->exists();
+
+        if ($isReferencedInStok || $isReferencedInPenjualanDetail) {
+            // Return error if the item is referenced
+            return response()->json([
+                'status' => false,
+                'message' => 'Barang tidak dapat dihapus karena masih digunakan di tabel lain'
+            ]);
+        }
+
+        // Proceed with the deletion if not referenced
+        if ($barang->delete()) {
+            return response()->json([
+                'status' => true,
+                'message' => 'Data barang berhasil dihapus'
+            ]);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Terjadi kesalahan saat menghapus data barang'
+            ]);
+        }
+    } else {
+        return redirect('/');
     }
+}
+
     public function show_ajax(string $id)
     {
         // Cari barang berdasarkan id
