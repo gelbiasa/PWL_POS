@@ -189,7 +189,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/export_pdf', [StokController::class, 'export_pdf']);
     });
 
-    Route::group(['prefix' => 'penjualan', 'middleware' => ['authorize:ADM,MNG,STF, CUS']], function () {
+    Route::group(['prefix' => 'penjualan', 'middleware' => ['authorize:ADM,MNG,STF']], function () {
         Route::get('/', [PenjualanController::class, 'index']);
         Route::post('/list', [PenjualanController::class, 'list']);
         Route::get('/create_ajax', [PenjualanController::class, 'create_ajax']);
@@ -203,7 +203,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/export_pdf', [PenjualanController::class, 'export_pdf']);
     });
 
-    Route::group(['prefix' => 'profile', 'middleware' => ['authorize:ADM,MNG,STF,CUS']], function () {
+    Route::group(['prefix' => 'profile'], function () {
         Route::get('/', [ProfileController::class, 'index']);
         Route::post('/update_profile', [ProfileController::class, 'update_profile']);
         Route::delete('/delete_profile', [ProfileController::class, 'delete_profile']);
