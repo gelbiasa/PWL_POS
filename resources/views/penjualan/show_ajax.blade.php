@@ -33,6 +33,10 @@
                 </div>
                 <table class="table table-sm table-bordered table-striped">
                     <tr>
+                        <th class="text-right col-3">ID Penjualan :</th>
+                        <td class="col-9">{{ $penjualan->penjualan_id }}</td>
+                    </tr>
+                    <tr>
                         <th class="text-right col-3">Kode Penjualan :</th>
                         <td class="col-9">{{ $penjualan->penjualan_kode }}</td>
                     </tr>

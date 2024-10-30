@@ -32,6 +32,10 @@
                     Apakah Anda yakin ingin menghapus data stok berikut?
                 </div>
                 <table class="table table-sm table-bordered table-striped">
+                    <tr>
+                        <th class="text-right col-3">ID stok :</th>
+                        <td class="col-9">{{ $stok->stok_id }}</td>
+                    </tr>
                     <tr><th class="text-right col-3">Barang :</th><td class="col-9">{{ $stok->barang->barang_nama }}</td></tr>
                     <tr><th class="text-right col-3">Supplier :</th><td class="col-9">{{ $stok->supplier->supplier_nama }}</td></tr>
                     <tr><th class="text-right col-3">User :</th><td class="col-9">{{ $stok->user->nama }}</td></tr>

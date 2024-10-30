@@ -29,6 +29,7 @@
                     Berikut adalah detail data Barang:
                 </div> 
                 <table class="table table-sm table-bordered table-striped"> 
+                    <tr><th class="text-right col-3">Barang ID :</th><td class="col-9">{{ $barang->barang_id }}</td></tr> 
                     <tr><th class="text-right col-3">Kategori Barang :</th><td class="col-9">{{ $barang->kategori->kategori_nama }}</td></tr> 
                     <tr><th class="text-right col-3">Kode Barang :</th><td class="col-9">{{ $barang->barang_kode }}</td></tr>
                     <tr><th class="text-right col-3">Nama Barang :</th><td class="col-9">{{ $barang->barang_nama }}</td></tr>
