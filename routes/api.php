@@ -21,7 +21,7 @@ use App\Http\Controllers\Api\BarangController;
 |
 */
 
-Route::post('/register', RegisterController::class)->name('register');
+Route::post('/register1', RegisterController::class)->name('register1');
 Route::post('/login', [LoginController::class, '__invoke'])->name('login');
 Route::post('/logout', LogoutController::class)->name('logout');
 // Tambahkan middleware 'auth:api' untuk route logout dan user

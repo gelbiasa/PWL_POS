@@ -16,12 +16,23 @@ class RegisterController extends Controller
             'username' => 'required',
             'nama' => 'required',
             'password' => 'required|min:5|confirmed',
-            'level_id' => 'required'
+            'level_id' => 'required',
+            'foto_profil' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:5120'
         ]);
 
-        // If validations fails
+        // If validation fails
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
+        }
+
+        // Handle the image upload and keep original name
+        if ($request->hasFile('foto_profil')) {
+
+            $foto_profil = $request->file('foto_profil');
+            
+            $path = $request->file('foto_profil')->storeAs('public/gambar', $foto_profil->hashName());
+            
+            $filename = basename($path);
         }
 
         // Create user
@@ -30,9 +41,10 @@ class RegisterController extends Controller
             'nama' => $request->nama,
             'password' => bcrypt($request->password),
             'level_id' => $request->level_id,
+            'foto_profil' => $filename ?? null
         ]);
 
-        // Return response JSON user is created
+        // Return response JSON if user is created
         if ($user) {
             return response()->json([
                 'user' => $user,
